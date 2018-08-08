@@ -1,4 +1,5 @@
 #include<iostream>
+#include <math.h>
 #include <opencv2/opencv.hpp>
 #include "opencv2/core/core.hpp"
 #include "highgui.h"
@@ -24,7 +25,7 @@ using namespace detail;
 //图片存储路径
 const string path = "../temp/";
 //保存路径
-vector<string> imgs_path;
+vector<String> imgs_path;
 //帧间隔
 int frameInterval = 400;
 
@@ -123,7 +124,58 @@ int main() {
 	BestOf2NearestMatcher matcher(true,0.3f);
 	matcher(features, pair_matches);
 	matcher.collectGarbage();
-	cout << pair_matches[0].H << endl;
+	cout<<matchesGraphAsString(imgs_path, pair_matches, 1.f);
+/*
+	//大小为n*n=81
+	cout <<"\nsize:"<< pair_matches.size() << endl;
+
+	for (int i = 0; i < pair_matches.size(); i++) {
+		Mat H;
+		Mat img1, img2;
+		H= pair_matches[i].H;
+		img1 = images[pair_matches[i].src_img_idx];
+		img2 =  images[pair_matches[i].dst_img_idx];
+		
+	}
+	*/
+	//cv::warpPerspective(img2, img1, h, cv::Size(8000, 6000));
+	//img1.copyTo(result(Range(0, img1.rows),Range::all()));
+
+	//将置信度高的放在一个全集中
+	vector<int> indices = leaveBiggestComponent(features, pair_matches, 1.f);
+
+	vector<MatchesInfo> best_matches;
+
+	cout << endl;
+	for (int i=0;i<pair_matches.size();i++)
+	{
+		if (pair_matches[i].confidence>2.f) {
+			best_matches.emplace_back(pair_matches[i]);
+			cout << "(" << pair_matches[i].src_img_idx << "," << pair_matches[i].dst_img_idx << ")   confidence:" << pair_matches[i].confidence << "  size:" << pair_matches[i].matches[1].imgIdx<<"  num:"<<pair_matches[i].num_inliers << endl;
+		
+			cout << pair_matches[i].H << endl;
+		}
+	}
+
+	cout << "best:" << best_matches.size();
+
+	drawMatches(images[0], features[0].keypoints, images[1], features[1].keypoints, pair_matches[1].matches, result);
+
+	
+	//warpPerspective(images[0], result, pair_matches[1].H, Size(images[0].cols,images[0].rows));
+	//变化投影
+	warpPerspective(images[0], result, pair_matches[1].H, Size(images[0].cols, images[0].rows));
+
+	cout << result.rows << result.cols << endl;
+
+	Mat dst(2000, 1000, CV_8UC3);
+	dst.setTo(0);
+	result.copyTo(dst(Rect(0,0, images[0].cols*0.5, images[0].rows*0.5)));
+	//images[1].copyTo(dst);	
+
+
+	imwrite("res.jpg", dst);
+	system("res.jpg");
 
 	return 0;
 }
