@@ -1,0 +1,9 @@
+﻿main.obj : error LNK2001: 无法解析的外部符号 "__declspec(dllimport) public: bool __cdecl QDir::mkdir(class QString const &)const " (__imp_?mkdir@QDir@@QEBA_NAEBVQString@@@Z)
+main.obj : error LNK2001: 无法解析的外部符号 "__declspec(dllimport) public: __cdecl QDir::~QDir(void)" (__imp_??1QDir@@QEAA@XZ)
+main.obj : error LNK2001: 无法解析的外部符号 "__declspec(dllimport) public: __cdecl QDir::QDir(class QString const &)" (__imp_??0QDir@@QEAA@AEBVQString@@@Z)
+main.obj : error LNK2001: 无法解析的外部符号 "__declspec(dllimport) private: static struct QString::Data QString::shared_null" (__imp_?shared_null@QString@@0UData@1@A)
+main.obj : error LNK2001: 无法解析的外部符号 "__declspec(dllimport) public: static class QString __cdecl QString::fromStdString(class std::basic_string<char,struct std::char_traits<char>,class std::allocator<char> > const &)" (__imp_?fromStdString@QString@@SA?AV1@AEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z)
+main.obj : error LNK2001: 无法解析的外部符号 "__declspec(dllimport) public: __cdecl QString::~QString(void)" (__imp_??1QString@@QEAA@XZ)
+main.obj : error LNK2001: 无法解析的外部符号 "__declspec(dllimport) public: __cdecl QString::QString(void)" (__imp_??0QString@@QEAA@XZ)
+main.obj : error LNK2001: 无法解析的外部符号 "__declspec(dllimport) public: bool __cdecl QBasicAtomicInt::ref(void)" (__imp_?ref@QBasicAtomicInt@@QEAA_NXZ)
+D:\VS2015WorkSpace\OpenCV\VideoStitch\x64\Release\VideoStitch.exe : fatal error LNK1120: 8 个无法解析的外部命令

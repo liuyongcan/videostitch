@@ -1,0 +1,5 @@
+﻿  main.cpp
+d:\vs2015workspace\opencv\videostitch\videostitch\main.cpp(42): warning C4018: “<”: 有符号/无符号不匹配
+d:\vs2015workspace\opencv\videostitch\videostitch\main.cpp(100): warning C4267: “初始化”: 从“size_t”转换到“int”，可能丢失数据
+  VideoStitch.vcxproj -> D:\VS2015WorkSpace\OpenCV\VideoStitch\x64\Debug\VideoStitch.exe
+  VideoStitch.vcxproj -> D:\VS2015WorkSpace\OpenCV\VideoStitch\x64\Debug\VideoStitch.pdb (Full PDB)
