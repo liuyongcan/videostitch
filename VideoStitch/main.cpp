@@ -22,160 +22,134 @@ using namespace std;
 using namespace cv;
 using namespace detail;
 
-//图片存储路径
-const string path = "../temp/";
-//保存路径
-vector<String> imgs_path;
-//帧间隔
-int frameInterval = 400;
-
-//
-Mat result;
 
 
-void init() {
+//将src_1拼接到src_2上
+Mat stitchImage(Mat src_1, Mat src_2) {
 
-	QDir dir(QString::fromStdString(path));
-	if (dir.exists())
-	{
-		//清空文件内容
-		dir.setFilter(QDir::Files);
-		for (int i = 0; i < dir.count(); i++)
-			dir.remove(dir[i]);
-	}
-	else {
-		//创建存储文件夹
-		dir.mkdir(QString::fromStdString(path));
-	}
+	for (int i = 0; i < src_1.rows; i++) {
+		uchar* row = src_1.ptr(i);
+		uchar* row_dst = src_2.ptr(i);
+		for (int j = 0; j < src_1.cols; j++) {
 
-}
+			if (row_dst[j * 3] == 0 && row_dst[j * 3 + 1] == 0 && row_dst[j * 3 + 2] == 0) {
+				row_dst[j * 3] = row[j * 3];
+				row_dst[j * 3 + 1] = row[j * 3 + 1];
+				row_dst[j * 3 + 2] = row[j * 3 + 2];
 
-bool getImages(string videoPath) {
-
-	Mat frame;
-	size_t count = 0;
-	stringstream ss;
-	string path_buf;
-
-	cv::VideoCapture capture(videoPath);
-	if (!capture.isOpened())
-	{
-		cout << "视频文件无法打开！！";
-		return false;
-	}
-
-	imgs_path.clear();
-	while (capture.read(frame))
-	{
-		if (frame.empty())
-			break;
-		
-		if (count%frameInterval == 0)
-		{
-			ss.clear();
-			ss << path << count << ".jpg";
-			ss >> path_buf;
-			imgs_path.emplace_back(path_buf);
-			imwrite(path_buf, frame);
+			}
+			else
+			{
+				row_dst[j * 3] = row_dst[j * 3];
+				row_dst[j * 3 + 1] = row_dst[j * 3 + 1];
+				row_dst[j * 3 + 2] = row_dst[j * 3 + 2];
+			}
 		}
-		count++;
 	}
-	return true;
+	return src_2;
 }
 
 int main() {
 
-	
-	string videoPath = "../video/250飞行高度.MOV";
-	//初始化数据
-	init();
-	//从视频中按帧间隔获取图片
-	getImages(videoPath);
+	//保存路径
+	vector<String> imgs_path;
+	imgs_path.emplace_back("../temp/0.jpg");
+	imgs_path.emplace_back("../temp/200.jpg");
+	imgs_path.emplace_back("../temp/400.jpg");
+	imgs_path.emplace_back("../temp/600.jpg");
+	imgs_path.emplace_back("../temp/800.jpg");
+	imgs_path.emplace_back("../temp/1000.jpg");
+	imgs_path.emplace_back("../temp/1200.jpg");
+	imgs_path.emplace_back("../temp/1400.jpg");
+	imgs_path.emplace_back("../temp/1600.jpg");
+	imgs_path.emplace_back("../temp/1800.jpg");
+	imgs_path.emplace_back("../temp/2000.jpg");
+	imgs_path.emplace_back("../temp/2200.jpg");
+	imgs_path.emplace_back("../temp/2400.jpg");
+	imgs_path.emplace_back("../temp/2600.jpg");
+	imgs_path.emplace_back("../temp/2800.jpg");
+	imgs_path.emplace_back("../temp/3000.jpg");
+	imgs_path.emplace_back("../temp/3200.jpg");
 
+	//原图像
 	vector<Mat> images;
-	for (int i = 0; i < imgs_path.size();i++) {
+	//调整图像大小
+	vector<Mat> images_resize;
+	//灰度图像
+	vector<Mat> images_gray;
+	//
+	const int images_num = imgs_path.size();
+
+	//调整图片位置
+#pragma omp parallel for
+	for (int i = 0; i < imgs_path.size(); i++)
+	{
 		images.emplace_back(imread(imgs_path[i]));
+
+		Mat src_p = images[i];
+		Mat imag(2500, 2500, CV_8UC3, Scalar::all(0));
+		Mat temp(imag, Rect(800, 800, src_p.cols, src_p.rows));
+		src_p.copyTo(temp);
+		images_resize.emplace_back(imag);
+		cvtColor(imag, imag, CV_BGR2GRAY);
+		images_gray.emplace_back(imag);
+
 	}
+
+	Mat dst;
+	Mat src = images_resize[0];
+
 	
-
-	int image_num = images.size();
-	
-	Ptr<FeaturesFinder> finder;
-	//采用ORB算法寻找特征点
-	finder = new OrbFeaturesFinder();
-	vector<ImageFeatures> features(image_num);
-
-	int64 tt = getTickCount();
-
-	for (int i=0;i<images.size();i++)
+	//
+	Ptr<ORB> orb = ORB::create();
+	//
+#pragma omp parallel for
+	for (int i = 1; i < images_num; i++)
 	{
-		Mat img = images[i];
- 		(*finder)(img, features[i]);
- 		features[i].img_idx = i;
- 		cout << "Features in image #" << i + 1 << ": " << features[i].keypoints.size() << endl;
-
-	}
-	//释放内存
-	finder->collectGarbage();
-	cout << "Finding features times:" << (getTickCount() - tt) / getTickFrequency() << "sec" << endl;
-	 
-	//特征点匹配
-	vector<MatchesInfo> pair_matches;
-	BestOf2NearestMatcher matcher(true,0.3f);
-	matcher(features, pair_matches);
-	matcher.collectGarbage();
-	cout<<matchesGraphAsString(imgs_path, pair_matches, 1.f);
-/*
-	//大小为n*n=81
-	cout <<"\nsize:"<< pair_matches.size() << endl;
-
-	for (int i = 0; i < pair_matches.size(); i++) {
-		Mat H;
-		Mat img1, img2;
-		H= pair_matches[i].H;
-		img1 = images[pair_matches[i].src_img_idx];
-		img2 =  images[pair_matches[i].dst_img_idx];
+		std::vector<KeyPoint> keypoints_src, keypoints_;
+		//创建两张图像的描述子，类型是Mat类型
+		Mat descriptors_src, descriptors_;
 		
-	}
-	*/
-	//cv::warpPerspective(img2, img1, h, cv::Size(8000, 6000));
-	//img1.copyTo(result(Range(0, img1.rows),Range::all()));
+		Mat d,d2;
+		//第一步：检测Oriented FAST角点位置.
+		orb->detect(src, keypoints_src);
+		drawKeypoints(src, keypoints_src, d, Scalar::all(-1), DrawMatchesFlags::DEFAULT);
+		orb->detect(images_resize[i], keypoints_);
+		drawKeypoints(images_resize[i], keypoints_, d2, Scalar::all(-1), DrawMatchesFlags::DEFAULT);
+		//第二步：根据角点位置计算BRIEF描述子
+		orb->compute(src, keypoints_src, descriptors_src);
+		orb->compute(images_resize[i], keypoints_, descriptors_);
 
-	//将置信度高的放在一个全集中
-	vector<int> indices = leaveBiggestComponent(features, pair_matches, 1.f);
 
-	vector<MatchesInfo> best_matches;
 
-	cout << endl;
-	for (int i=0;i<pair_matches.size();i++)
-	{
-		if (pair_matches[i].confidence>2.f) {
-			best_matches.emplace_back(pair_matches[i]);
-			cout << "(" << pair_matches[i].src_img_idx << "," << pair_matches[i].dst_img_idx << ")   confidence:" << pair_matches[i].confidence << "  size:" << pair_matches[i].matches[1].imgIdx<<"  num:"<<pair_matches[i].num_inliers << endl;
-		
-			cout << pair_matches[i].H << endl;
+		vector<DMatch> matches;
+		BFMatcher matcher(NORM_HAMMING);
+		matcher.match(descriptors_src, descriptors_, matches);
+
+		vector<Point2f> imagePoints1, imagePoints2;
+		for (int j = 0; j < matches.size(); j++)
+		{
+			imagePoints1.push_back(keypoints_src[matches[j].queryIdx].pt);
+			imagePoints2.push_back(keypoints_[matches[j].trainIdx].pt);
+
 		}
+
+		Mat H;
+		H = findHomography(imagePoints1, imagePoints2, CV_RANSAC);
+		Mat outImg;
+		warpPerspective(src, outImg, H, Size(2000, 2000));
+		dst=stitchImage(outImg, images_resize[i]);
+		
+		keypoints_src.clear();
+		keypoints_.clear();
+		imagePoints1.clear();
+		imagePoints2.clear();
+		src.setTo(0);
+		dst.copyTo(src);
+
 	}
-
-	cout << "best:" << best_matches.size();
-
-	drawMatches(images[0], features[0].keypoints, images[1], features[1].keypoints, pair_matches[1].matches, result);
-
-	
-	//warpPerspective(images[0], result, pair_matches[1].H, Size(images[0].cols,images[0].rows));
-	//变化投影
-	warpPerspective(images[0], result, pair_matches[1].H, Size(images[0].cols, images[0].rows));
-
-	cout << result.rows << result.cols << endl;
-
-	Mat dst(2000, 1000, CV_8UC3);
-	dst.setTo(0);
-	result.copyTo(dst(Rect(0,0, images[0].cols*0.5, images[0].rows*0.5)));
-	//images[1].copyTo(dst);	
-
 
 	imwrite("res.jpg", dst);
 	system("res.jpg");
 
-	return 0;
 }
